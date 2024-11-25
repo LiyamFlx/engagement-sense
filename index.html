@@ -3,213 +3,249 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>EngageSense</title>
+  <title>EngageSense: Real-Time Analysis</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
   <style>
     body {
       font-family: Arial, sans-serif;
       margin: 0;
       padding: 0;
       background-color: #f4f4f9;
+      text-align: center;
     }
     .container {
       padding: 20px;
       max-width: 1200px;
       margin: auto;
-      text-align: center;
     }
-    .hidden {
-      display: none;
+    canvas {
+      margin: 20px auto;
+      max-width: 800px;
+      height: 400px;
     }
-    button, select {
+    .scorecard {
+      margin: 20px auto;
+      padding: 20px;
+      width: 300px;
+      background-color: #fff;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+    .scorecard h2 {
+      font-size: 2rem;
+      margin: 10px 0;
+    }
+    button {
       margin: 10px;
       padding: 10px 20px;
       font-size: 16px;
       cursor: pointer;
     }
-    canvas {
-      margin: 20px auto;
-      max-width: 900px;
-      height: 400px;
-    }
-    .navigation-bar {
-      background: #333;
-      color: #fff;
+    .button-row {
       display: flex;
       justify-content: center;
-      padding: 10px;
-      position: sticky;
-      top: 0;
-    }
-    .navigation-bar a {
-      color: #fff;
-      margin: 0 15px;
-      text-decoration: none;
-    }
-    .navigation-bar a:hover {
-      text-decoration: underline;
+      gap: 20px;
     }
   </style>
 </head>
 <body>
-  <!-- Navigation Bar -->
-  <div class="navigation-bar">
-    <a href="#" onclick="showScreen('start-screen')">Start</a>
-    <a href="#" onclick="showScreen('welcome-screen')">Welcome</a>
-    <a href="#" onclick="showScreen('upload-record-screen')">Upload/Record</a>
-    <a href="#" onclick="showScreen('analyze-screen')">Analyze</a>
-    <a href="#" onclick="showScreen('live-audio-screen')">Live Processing</a>
-  </div>
+  <div class="container">
+    <h1>EngageSense: Real-Time Analysis</h1>
+    <p>Real-time emotion detection, engagement scoring, and dynamic visualizations.</p>
 
-  <!-- Start Screen -->
-  <div id="start-screen" class="container">
-    <h1>Welcome to EngageSense</h1>
-    <p>Analyze and visualize audio input or files in real-time.</p>
-    <button onclick="showScreen('welcome-screen')">Start Analyzing</button>
-  </div>
-
-  <!-- Welcome Screen -->
-  <div id="welcome-screen" class="container hidden">
-    <h2>Features of EngageSense</h2>
-    <ul style="text-align: left; max-width: 800px; margin: auto;">
-      <li>Upload or record audio files for analysis.</li>
-      <li>Visualize engagement metrics with dynamic charts.</li>
-      <li>Analyze live audio with real-time visualizations.</li>
-      <li>Export results as CSV, Excel, or PDF for detailed reporting.</li>
-    </ul>
-    <button onclick="showScreen('upload-record-screen')">Next</button>
-  </div>
-
-  <!-- Upload/Record Screen -->
-  <div id="upload-record-screen" class="container hidden">
-    <h2>Upload or Record Audio</h2>
-    <div>
-      <h3>File Upload</h3>
-      <input type="file" id="audio-upload" accept="audio/*">
-      <button onclick="processFile()">Analyze File</button>
+    <!-- Scorecard -->
+    <div class="scorecard">
+      <h3>Engagement Score</h3>
+      <h2 id="engagement-score">0</h2>
+      <p id="engagement-class">Class: N/A</p>
     </div>
-    <div>
-      <h3>Audio Recording</h3>
-      <button id="record-button" onclick="startRecording()">Start Recording</button>
-      <button id="stop-button" class="hidden" onclick="stopRecording()">Stop Recording</button>
-      <p id="record-status"></p>
+
+    <!-- Emotion Chart -->
+    <canvas id="emotionChart"></canvas>
+
+    <!-- Engagement Chart -->
+    <canvas id="engagementChart"></canvas>
+
+    <!-- Buttons -->
+    <div class="button-row">
+      <button onclick="startRealTimeProcessing()">Start Real-Time Analysis</button>
+      <button onclick="stopRealTimeProcessing()">Stop Analysis</button>
+      <button onclick="exportToPDF()">Export to PDF</button>
+      <button onclick="exportToCSV()">Export to CSV</button>
     </div>
-    <button onclick="showScreen('analyze-screen')">Next</button>
   </div>
-
-  <!-- Analyze Screen -->
-  <div id="analyze-screen" class="container hidden">
-    <h2>Analysis Results</h2>
-    <canvas id="barChart"></canvas>
-    <canvas id="lineChart"></canvas>
-    <button onclick="showScreen('live-audio-screen')">Live Audio Processing</button>
-  </div>
-
-  <!-- Live Audio Processing Screen -->
-  <div id="live-audio-screen" class="container hidden">
-    <h2>Live Audio Processing</h2>
-    <p>Visualizing live engagement data in real-time.</p>
-    <canvas id="liveChart"></canvas>
-    <button onclick="showScreen('start-screen')">Restart</button>
-  </div>
-
-  <!-- Include Chart.js -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
   <script>
-    // Navigation
-    function showScreen(screenId) {
-      document.querySelectorAll('.container').forEach(screen => screen.classList.add('hidden'));
-      document.getElementById(screenId).classList.remove('hidden');
-    }
+    let emotionInterval, engagementInterval;
+    let emotionChart, engagementChart;
+    let emotionData = [];
+    let engagementData = [];
+    let time = 0;
 
-    // Real-Time Data
-    let timeSeries = [];
-    let barChart, lineChart, liveChart;
-
-    // Initialize Charts
-    function initCharts() {
-      const barCtx = document.getElementById('barChart').getContext('2d');
-      const lineCtx = document.getElementById('lineChart').getContext('2d');
-      const liveCtx = document.getElementById('liveChart').getContext('2d');
-
-      barChart = new Chart(barCtx, {
+    // Initialize Emotion Chart
+    function initEmotionChart() {
+      const ctx = document.getElementById('emotionChart').getContext('2d');
+      emotionChart = new Chart(ctx, {
         type: 'bar',
         data: {
-          labels: ["Body Movement", "Dance Patterns", "Hand Movements", "Foot Stomping"],
+          labels: ['Happy', 'Sad', 'Angry', 'Surprised', 'Fearful', 'Disgusted', 'Neutral'],
           datasets: [{
-            label: 'Engagement Levels',
-            data: [75, 60, 45, 85],
-            backgroundColor: ['rgba(75, 192, 192, 0.6)', 'rgba(54, 162, 235, 0.6)', 'rgba(255, 206, 86, 0.6)', 'rgba(255, 99, 132, 0.6)']
+            label: 'Emotion Intensity',
+            data: [0, 0, 0, 0, 0, 0, 0],
+            backgroundColor: [
+              'rgba(75, 192, 192, 0.6)',
+              'rgba(54, 162, 235, 0.6)',
+              'rgba(255, 99, 132, 0.6)',
+              'rgba(255, 206, 86, 0.6)',
+              'rgba(153, 102, 255, 0.6)',
+              'rgba(201, 203, 207, 0.6)',
+              'rgba(255, 159, 64, 0.6)'
+            ]
           }]
         },
-        options: { responsive: true }
+        options: {
+          responsive: true,
+          plugins: {
+            title: {
+              display: true,
+              text: 'Emotion Intensity in Real-Time'
+            }
+          },
+          scales: {
+            y: {
+              title: {
+                display: true,
+                text: 'Intensity'
+              },
+              beginAtZero: true
+            }
+          }
+        }
       });
+    }
 
-      lineChart = new Chart(lineCtx, {
-        type: 'line',
-        data: {
-          labels: Array.from({ length: 10 }, (_, i) => i),
-          datasets: [{
-            label: 'Real-Time Engagement Trends',
-            data: Array.from({ length: 10 }, () => Math.random() * 100),
-            borderColor: 'rgba(75, 192, 192, 1)',
-            fill: false
-          }]
-        },
-        options: { responsive: true }
-      });
-
-      liveChart = new Chart(liveCtx, {
+    // Initialize Engagement Chart
+    function initEngagementChart() {
+      const ctx = document.getElementById('engagementChart').getContext('2d');
+      engagementChart = new Chart(ctx, {
         type: 'line',
         data: {
           labels: [],
           datasets: [{
-            label: 'Live Engagement Data',
+            label: 'Engagement Score',
             data: [],
-            borderColor: 'rgba(255, 99, 132, 1)',
+            borderColor: 'rgba(75, 192, 192, 1)',
             fill: false
           }]
         },
-        options: { responsive: true }
+        options: {
+          responsive: true,
+          plugins: {
+            title: {
+              display: true,
+              text: 'Engagement Score Over Time'
+            }
+          },
+          scales: {
+            y: {
+              title: {
+                display: true,
+                text: 'Engagement Score'
+              },
+              beginAtZero: true
+            },
+            x: {
+              title: {
+                display: true,
+                text: 'Time'
+              }
+            }
+          }
+        }
       });
     }
 
-    // Simulate Live Data Updates
-    function startLiveProcessing() {
-      setInterval(() => {
-        const newTime = liveChart.data.labels.length;
-        const newValue = Math.random() * 100;
+    // Start Real-Time Processing
+    function startRealTimeProcessing() {
+      // Simulate Emotion Detection
+      emotionInterval = setInterval(() => {
+        const emotions = {
+          Happy: Math.random() * 100,
+          Sad: Math.random() * 50,
+          Angry: Math.random() * 30,
+          Surprised: Math.random() * 80,
+          Fearful: Math.random() * 20,
+          Disgusted: Math.random() * 10,
+          Neutral: Math.random() * 100
+        };
 
-        liveChart.data.labels.push(newTime);
-        liveChart.data.datasets[0].data.push(newValue);
+        emotionData.push(emotions);
+        emotionChart.data.datasets[0].data = [
+          emotions.Happy,
+          emotions.Sad,
+          emotions.Angry,
+          emotions.Surprised,
+          emotions.Fearful,
+          emotions.Disgusted,
+          emotions.Neutral
+        ];
+        emotionChart.update();
+      }, 2000);
 
-        liveChart.update();
-      }, 1000);
+      // Simulate Engagement Scoring
+      engagementInterval = setInterval(() => {
+        const engagementScore = Math.random() * 100;
+        const engagementClass = engagementScore > 75 ? 'High' : engagementScore > 50 ? 'Moderate' : 'Low';
+
+        engagementData.push({ time, engagementScore });
+        document.getElementById('engagement-score').textContent = engagementScore.toFixed(2);
+        document.getElementById('engagement-class').textContent = `Class: ${engagementClass}`;
+
+        engagementChart.data.labels.push(time++);
+        engagementChart.data.datasets[0].data.push(engagementScore);
+
+        if (engagementChart.data.labels.length > 20) {
+          engagementChart.data.labels.shift();
+          engagementChart.data.datasets[0].data.shift();
+        }
+        engagementChart.update();
+      }, 2000);
     }
 
-    // Process File
-    function processFile() {
-      alert("File processed successfully! Displaying results.");
-      showScreen('analyze-screen');
+    // Stop Real-Time Processing
+    function stopRealTimeProcessing() {
+      clearInterval(emotionInterval);
+      clearInterval(engagementInterval);
+      alert("Real-Time Processing Stopped.");
     }
 
-    // Start and Stop Recording
-    function startRecording() {
-      document.getElementById('record-button').classList.add('hidden');
-      document.getElementById('stop-button').classList.remove('hidden');
-      document.getElementById('record-status').textContent = "Recording...";
+    // Export to PDF
+    function exportToPDF() {
+      const pdf = new jsPDF();
+      pdf.text('EngageSense Report', 10, 10);
+      pdf.save('EngageSense_Report.pdf');
     }
 
-    function stopRecording() {
-      document.getElementById('record-button').classList.remove('hidden');
-      document.getElementById('stop-button').classList.add('hidden');
-      document.getElementById('record-status').textContent = "Recording stopped!";
-      processFile();
+    // Export to CSV
+    function exportToCSV() {
+      const csvContent = "data:text/csv;charset=utf-8," + 
+        engagementData.map(e => `${e.time},${e.engagementScore}`).join("\n");
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", "EngageSense_Data.csv");
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
     }
 
-    // Initialize Everything
+    // Initialize Charts on Load
     window.onload = () => {
-      initCharts();
+      initEmotionChart();
+      initEngagementChart();
     };
   </script>
 </body>
