@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EngageSense</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      text-align: center;
+      background-color: #f4f4f9;
+    }
+    .container {
+      padding: 20px;
+    }
+    #upload-box, #record-box {
+      border: 2px dashed #ccc;
+      padding: 20px;
+      margin: 20px auto;
+      width: 80%;
+      max-width: 500px;
+      background: #fff;
+    }
+    #results {
+      margin: 20px auto;
+      width: 80%;
+      max-width: 500px;
+      padding: 20px;
+      background: #fff;
+      border-radius: 5px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+    button {
+      margin: 10px;
+      padding: 10px 20px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    .hidden {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>EngageSense</h1>
+    <p>Analyze audio files for engagement metrics.</p>
+
+    <!-- Welcome Screen -->
+    <div id="welcome-screen">
+      <button onclick="showScreen('upload-screen')">Upload or Record Audio</button>
+    </div>
+
+    <!-- Upload/Record Screen -->
+    <div id="upload-screen" class="hidden">
+      <div id="upload-box">
+        <h2>Upload an Audio File</h2>
+        <input type="file" id="audio-upload" accept="audio/*">
+        <button onclick="processFile()">Analyze Uploaded Audio</button>
+      </div>
+      <div id="record-box">
+        <h2>Record Audio</h2>
+        <button id="record-button" onclick="startRecording()">Start Recording</button>
+        <button id="stop-button" class="hidden" onclick="stopRecording()">Stop Recording</button>
+        <p id="record-status"></p>
+      </div>
+      <button onclick="showScreen('welcome-screen')">Back</button>
+    </div>
+
+    <!-- Results Screen -->
+    <div id="results-screen" class="hidden">
+      <h2>Analysis Results</h2>
+      <div id="results"></div>
+      <button onclick="showScreen('upload-screen')">Upload/Record Another</button>
+    </div>
+  </div>
+
+  <script>
+    // Navigation
+    function showScreen(screenId) {
+      document.querySelectorAll('.container > div').forEach(div => div.classList.add('hidden'));
+      document.getElementById(screenId).classList.remove('hidden');
+    }
+
+    // Recording Audio
+    let recorder, audioChunks;
+    async function startRecording() {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      recorder = new MediaRecorder(stream);
+      audioChunks = [];
+
+      recorder.ondataavailable = e => audioChunks.push(e.data);
+      recorder.onstop = () => analyzeAudio(new Blob(audioChunks));
+
+      recorder.start();
+      document.getElementById('record-button').classList.add('hidden');
+      document.getElementById('stop-button').classList.remove('hidden');
+      document.getElementById('record-status').textContent = 'Recording...';
+    }
+
+    function stopRecording() {
+      recorder.stop();
+      document.getElementById('record-button').classList.remove('hidden');
+      document.getElementById('stop-button').classList.add('hidden');
+      document.getElementById('record-status').textContent = 'Recording stopped.';
+    }
+
+    // Upload Audio File
+    function processFile() {
+      const file = document.getElementById('audio-upload').files[0];
+      if (!file) {
+        alert('Please upload a file first.');
+        return;
+      }
+      analyzeAudio(file);
+    }
+
+    // Analyze Audio
+    function analyzeAudio(audioBlob) {
+      showScreen('results-screen');
+      const resultsDiv = document.getElementById('results');
+      resultsDiv.textContent = 'Processing audio...';
+
+      // Simulate analysis (mocked values for simplicity)
+      setTimeout(() => {
+        const tempo = Math.random() * 100 + 100; // Mock tempo in BPM
+        const rms = Math.random().toFixed(2); // Mock RMS energy
+        resultsDiv.innerHTML = `
+          <p><strong>Tempo:</strong> ${tempo.toFixed(2)} BPM</p>
+          <p><strong>RMS Energy:</strong> ${rms}</p>
+        `;
+      }, 2000);
+    }
+  </script>
+</body>
+</html>
