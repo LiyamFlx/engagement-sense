@@ -3,250 +3,213 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>EngageSense: Advanced Real-Time Analysis</title>
+  <title>EngageSense</title>
   <style>
     body {
       font-family: Arial, sans-serif;
       margin: 0;
       padding: 0;
-      text-align: center;
       background-color: #f4f4f9;
     }
     .container {
       padding: 20px;
       max-width: 1200px;
       margin: auto;
+      text-align: center;
     }
-    .filters {
-      display: flex;
-      justify-content: center;
-      margin-bottom: 20px;
-      gap: 20px;
+    .hidden {
+      display: none;
+    }
+    button, select {
+      margin: 10px;
+      padding: 10px 20px;
+      font-size: 16px;
+      cursor: pointer;
     }
     canvas {
-      width: 100%;
-      max-width: 1000px;
+      margin: 20px auto;
+      max-width: 900px;
       height: 400px;
-      margin: 20px auto;
     }
-    .table-container {
-      margin: 20px auto;
-      width: 90%;
-      overflow-x: auto;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin: 20px auto;
-      background: #fff;
-      border: 1px solid #ddd;
-      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-    }
-    th, td {
-      padding: 10px;
-      text-align: center;
-      border: 1px solid #ddd;
-    }
-    th {
-      background: #f4f4f9;
-      font-weight: bold;
-    }
-    .result-cards {
+    .navigation-bar {
+      background: #333;
+      color: #fff;
       display: flex;
-      flex-wrap: wrap;
       justify-content: center;
-      gap: 20px;
+      padding: 10px;
+      position: sticky;
+      top: 0;
     }
-    .result-card {
-      background: #fff;
-      padding: 20px;
-      border-radius: 8px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
-      width: 200px;
-      text-align: center;
+    .navigation-bar a {
+      color: #fff;
+      margin: 0 15px;
+      text-decoration: none;
+    }
+    .navigation-bar a:hover {
+      text-decoration: underline;
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h1>EngageSense: Real-Time Analysis</h1>
-    <p>Analyze audio and body movement data with real-time metrics.</p>
+  <!-- Navigation Bar -->
+  <div class="navigation-bar">
+    <a href="#" onclick="showScreen('start-screen')">Start</a>
+    <a href="#" onclick="showScreen('welcome-screen')">Welcome</a>
+    <a href="#" onclick="showScreen('upload-record-screen')">Upload/Record</a>
+    <a href="#" onclick="showScreen('analyze-screen')">Analyze</a>
+    <a href="#" onclick="showScreen('live-audio-screen')">Live Processing</a>
+  </div>
 
-    <!-- Filters -->
-    <div class="filters">
-      <div>
-        <label for="parameter-filter">Select Parameter:</label>
-        <select id="parameter-filter" onchange="updateVisualization()">
-          <option value="all">All Parameters</option>
-          <option value="Body Movement">Body Movement</option>
-          <option value="Dance Patterns">Dance Patterns</option>
-          <option value="Hand Movements">Hand Movements</option>
-          <option value="Foot Stomping">Foot Stomping</option>
-        </select>
-      </div>
-      <div>
-        <label for="time-filter">Time Range:</label>
-        <select id="time-filter" onchange="updateVisualization()">
-          <option value="full">Full Session</option>
-          <option value="last5">Last 5 Seconds</option>
-          <option value="last1">Last 1 Second</option>
-        </select>
-      </div>
-    </div>
+  <!-- Start Screen -->
+  <div id="start-screen" class="container">
+    <h1>Welcome to EngageSense</h1>
+    <p>Analyze and visualize audio input or files in real-time.</p>
+    <button onclick="showScreen('welcome-screen')">Start Analyzing</button>
+  </div>
 
-    <!-- Visualization Section -->
+  <!-- Welcome Screen -->
+  <div id="welcome-screen" class="container hidden">
+    <h2>Features of EngageSense</h2>
+    <ul style="text-align: left; max-width: 800px; margin: auto;">
+      <li>Upload or record audio files for analysis.</li>
+      <li>Visualize engagement metrics with dynamic charts.</li>
+      <li>Analyze live audio with real-time visualizations.</li>
+      <li>Export results as CSV, Excel, or PDF for detailed reporting.</li>
+    </ul>
+    <button onclick="showScreen('upload-record-screen')">Next</button>
+  </div>
+
+  <!-- Upload/Record Screen -->
+  <div id="upload-record-screen" class="container hidden">
+    <h2>Upload or Record Audio</h2>
     <div>
-      <h3>Engagement Metrics Visualization</h3>
-      <canvas id="lineChart"></canvas>
-      <canvas id="scatterPlot"></canvas>
+      <h3>File Upload</h3>
+      <input type="file" id="audio-upload" accept="audio/*">
+      <button onclick="processFile()">Analyze File</button>
     </div>
+    <div>
+      <h3>Audio Recording</h3>
+      <button id="record-button" onclick="startRecording()">Start Recording</button>
+      <button id="stop-button" class="hidden" onclick="stopRecording()">Stop Recording</button>
+      <p id="record-status"></p>
+    </div>
+    <button onclick="showScreen('analyze-screen')">Next</button>
+  </div>
 
-    <!-- Result Cards -->
-    <div class="result-cards">
-      <!-- Cards dynamically generated -->
-    </div>
+  <!-- Analyze Screen -->
+  <div id="analyze-screen" class="container hidden">
+    <h2>Analysis Results</h2>
+    <canvas id="barChart"></canvas>
+    <canvas id="lineChart"></canvas>
+    <button onclick="showScreen('live-audio-screen')">Live Audio Processing</button>
+  </div>
 
-    <!-- Detailed Table -->
-    <div class="table-container">
-      <h3>Engagement Metrics Data</h3>
-      <table id="data-table">
-        <thead>
-          <tr>
-            <th>Time</th>
-            <th>Body Movement</th>
-            <th>Dance Patterns</th>
-            <th>Hand Movements</th>
-            <th>Foot Stomping</th>
-          </tr>
-        </thead>
-        <tbody>
-          <!-- Data dynamically generated -->
-        </tbody>
-      </table>
-    </div>
+  <!-- Live Audio Processing Screen -->
+  <div id="live-audio-screen" class="container hidden">
+    <h2>Live Audio Processing</h2>
+    <p>Visualizing live engagement data in real-time.</p>
+    <canvas id="liveChart"></canvas>
+    <button onclick="showScreen('start-screen')">Restart</button>
   </div>
 
   <!-- Include Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
   <script>
-    // Real-time data arrays
-    const parameters = ["Body Movement", "Dance Patterns", "Hand Movements", "Foot Stomping"];
-    let timeSeries = []; // Holds real-time data
+    // Navigation
+    function showScreen(screenId) {
+      document.querySelectorAll('.container').forEach(screen => screen.classList.add('hidden'));
+      document.getElementById(screenId).classList.remove('hidden');
+    }
+
+    // Real-Time Data
+    let timeSeries = [];
+    let barChart, lineChart, liveChart;
 
     // Initialize Charts
-    let lineChart, scatterPlot;
-    const lineCtx = document.getElementById('lineChart').getContext('2d');
-    const scatterCtx = document.getElementById('scatterPlot').getContext('2d');
-
     function initCharts() {
-      // Line Chart for Real-Time Data
+      const barCtx = document.getElementById('barChart').getContext('2d');
+      const lineCtx = document.getElementById('lineChart').getContext('2d');
+      const liveCtx = document.getElementById('liveChart').getContext('2d');
+
+      barChart = new Chart(barCtx, {
+        type: 'bar',
+        data: {
+          labels: ["Body Movement", "Dance Patterns", "Hand Movements", "Foot Stomping"],
+          datasets: [{
+            label: 'Engagement Levels',
+            data: [75, 60, 45, 85],
+            backgroundColor: ['rgba(75, 192, 192, 0.6)', 'rgba(54, 162, 235, 0.6)', 'rgba(255, 206, 86, 0.6)', 'rgba(255, 99, 132, 0.6)']
+          }]
+        },
+        options: { responsive: true }
+      });
+
       lineChart = new Chart(lineCtx, {
         type: 'line',
         data: {
-          labels: [], // Time points
-          datasets: parameters.map(param => ({
-            label: param,
-            data: [],
-            borderColor: `rgba(${Math.random() * 255}, ${Math.random() * 255}, ${Math.random() * 255}, 1)`,
+          labels: Array.from({ length: 10 }, (_, i) => i),
+          datasets: [{
+            label: 'Real-Time Engagement Trends',
+            data: Array.from({ length: 10 }, () => Math.random() * 100),
+            borderColor: 'rgba(75, 192, 192, 1)',
             fill: false
-          }))
+          }]
         },
-        options: {
-          responsive: true,
-          plugins: {
-            title: { display: true, text: 'Real-Time Parameter Trends' }
-          }
-        }
+        options: { responsive: true }
       });
 
-      // Scatter Plot for Parameter Correlations
-      scatterPlot = new Chart(scatterCtx, {
-        type: 'scatter',
+      liveChart = new Chart(liveCtx, {
+        type: 'line',
         data: {
-          datasets: parameters.map(param => ({
-            label: param,
+          labels: [],
+          datasets: [{
+            label: 'Live Engagement Data',
             data: [],
-            borderColor: `rgba(${Math.random() * 255}, ${Math.random() * 255}, ${Math.random() * 255}, 1)`
-          }))
+            borderColor: 'rgba(255, 99, 132, 1)',
+            fill: false
+          }]
         },
-        options: {
-          responsive: true,
-          plugins: {
-            title: { display: true, text: 'Parameter Correlations' }
-          }
-        }
+        options: { responsive: true }
       });
     }
 
-    // Fetch real-time data
-    async function fetchData() {
+    // Simulate Live Data Updates
+    function startLiveProcessing() {
       setInterval(() => {
-        const currentTime = timeSeries.length;
-        const newData = {
-          time: currentTime,
-          "Body Movement": Math.random() * 100,
-          "Dance Patterns": Math.random() * 80,
-          "Hand Movements": Math.random() * 60,
-          "Foot Stomping": Math.random() * 40
-        };
-        timeSeries.push(newData);
-        updateCharts();
-        updateTable();
-        updateCards();
-      }, 1000); // Update every second
+        const newTime = liveChart.data.labels.length;
+        const newValue = Math.random() * 100;
+
+        liveChart.data.labels.push(newTime);
+        liveChart.data.datasets[0].data.push(newValue);
+
+        liveChart.update();
+      }, 1000);
     }
 
-    // Update Charts
-    function updateCharts() {
-      lineChart.data.labels = timeSeries.map(d => d.time);
-      lineChart.data.datasets.forEach(dataset => {
-        dataset.data = timeSeries.map(d => d[dataset.label]);
-      });
-      lineChart.update();
-
-      scatterPlot.data.datasets.forEach(dataset => {
-        dataset.data = timeSeries.map(d => ({ x: d.time, y: d[dataset.label] }));
-      });
-      scatterPlot.update();
+    // Process File
+    function processFile() {
+      alert("File processed successfully! Displaying results.");
+      showScreen('analyze-screen');
     }
 
-    // Update Table
-    function updateTable() {
-      const tbody = document.getElementById('data-table').querySelector('tbody');
-      tbody.innerHTML = '';
-      timeSeries.forEach(row => {
-        tbody.innerHTML += `
-          <tr>
-            <td>${row.time}</td>
-            <td>${row["Body Movement"].toFixed(2)}</td>
-            <td>${row["Dance Patterns"].toFixed(2)}</td>
-            <td>${row["Hand Movements"].toFixed(2)}</td>
-            <td>${row["Foot Stomping"].toFixed(2)}</td>
-          </tr>
-        `;
-      });
+    // Start and Stop Recording
+    function startRecording() {
+      document.getElementById('record-button').classList.add('hidden');
+      document.getElementById('stop-button').classList.remove('hidden');
+      document.getElementById('record-status').textContent = "Recording...";
     }
 
-    // Update Cards
-    function updateCards() {
-      const cardContainer = document.querySelector('.result-cards');
-      cardContainer.innerHTML = '';
-      parameters.forEach(param => {
-        const avg = timeSeries.reduce((sum, row) => sum + row[param], 0) / timeSeries.length;
-        cardContainer.innerHTML += `
-          <div class="result-card">
-            <h3>${param}</h3>
-            <p>Average: ${avg.toFixed(2)}</p>
-          </div>
-        `;
-      });
+    function stopRecording() {
+      document.getElementById('record-button').classList.remove('hidden');
+      document.getElementById('stop-button').classList.add('hidden');
+      document.getElementById('record-status').textContent = "Recording stopped!";
+      processFile();
     }
 
-    // Initialize everything
+    // Initialize Everything
     window.onload = () => {
       initCharts();
-      fetchData();
     };
   </script>
 </body>
