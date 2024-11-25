@@ -15,35 +15,11 @@
     .container {
       padding: 20px;
     }
-    .hidden {
-      display: none;
-    }
-    #upload-box, #record-box {
-      border: 2px dashed #ccc;
-      padding: 20px;
+    canvas {
       margin: 20px auto;
-      width: 80%;
-      max-width: 500px;
-      background: #fff;
+      max-width: 600px;
     }
-    #results {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 20px;
-      margin: 20px auto;
-      width: 80%;
-      max-width: 1000px;
-    }
-    .result-card {
-      background: #fff;
-      padding: 20px;
-      border-radius: 8px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
-      width: 200px;
-      text-align: center;
-    }
-    button {
+    button, select {
       margin: 10px;
       padding: 10px 20px;
       font-size: 16px;
@@ -53,138 +29,163 @@
 </head>
 <body>
   <div class="container">
-    <h1>EngageSense</h1>
-    <p>Analyze audio files for engagement metrics.</p>
+    <h1>EngageSense: Advanced Sensor Tracking</h1>
+    <p>Real-time audio and body movement analysis with advanced visualizations.</p>
 
-    <!-- Welcome Screen -->
-    <div id="welcome-screen">
-      <button onclick="showScreen('upload-screen')">Upload or Record Audio</button>
+    <!-- Filters -->
+    <div>
+      <label for="parameter-filter">Select Parameter:</label>
+      <select id="parameter-filter" onchange="updateVisualization()">
+        <option value="all">All Parameters</option>
+        <option value="Body Movement">Body Movement</option>
+        <option value="Dance Patterns">Dance Patterns</option>
+        <option value="Hand Movements">Hand Movements</option>
+        <option value="Foot Stomping">Foot Stomping</option>
+      </select>
+
+      <label for="time-filter">Time Range:</label>
+      <select id="time-filter" onchange="updateVisualization()">
+        <option value="full">Full Session</option>
+        <option value="last5">Last 5 Minutes</option>
+        <option value="last1">Last 1 Minute</option>
+      </select>
     </div>
 
-    <!-- Upload/Record Screen -->
-    <div id="upload-screen" class="hidden">
-      <div id="upload-box">
-        <h2>Upload an Audio File</h2>
-        <input type="file" id="audio-upload" accept="audio/*">
-        <button onclick="processFile()">Analyze Uploaded Audio</button>
-      </div>
-      <div id="record-box">
-        <h2>Record Audio</h2>
-        <button id="record-button" onclick="startRecording()">Start Recording</button>
-        <button id="stop-button" class="hidden" onclick="stopRecording()">Stop Recording</button>
-        <p id="record-status"></p>
-      </div>
-      <button onclick="showScreen('welcome-screen')">Back</button>
-    </div>
-
-    <!-- Results Screen -->
-    <div id="results-screen" class="hidden">
-      <h2>Analysis Results</h2>
-      <div id="results">
-        <!-- Dynamically populated KPI cards -->
-      </div>
-      <div style="margin-top: 20px;">
-        <h3>Export Results</h3>
-        <button onclick="exportResults('csv')">Export as CSV</button>
-        <button onclick="exportResults('pdf')">Export as PDF</button>
-        <button onclick="exportResults('excel')">Export as Excel</button>
-      </div>
-      <button onclick="showScreen('upload-screen')">Upload/Record Another</button>
+    <!-- Visualization Section -->
+    <div>
+      <h3>Engagement Metrics Visualization</h3>
+      <canvas id="lineChart"></canvas>
+      <canvas id="scatterPlot"></canvas>
+      <canvas id="timeSeriesPlot"></canvas>
     </div>
   </div>
 
+  <!-- Include Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
   <script>
-    // Navigation
-    function showScreen(screenId) {
-      document.querySelectorAll('.container > div').forEach(div => div.classList.add('hidden'));
-      document.getElementById(screenId).classList.remove('hidden');
+    // Mock Data for Real-Time Analysis
+    const data = {
+      parameters: ["Body Movement", "Dance Patterns", "Hand Movements", "Foot Stomping"],
+      timeSeries: Array.from({ length: 100 }, (_, i) => ({
+        time: i,
+        "Body Movement": Math.random() * 100,
+        "Dance Patterns": Math.random() * 80,
+        "Hand Movements": Math.random() * 60,
+        "Foot Stomping": Math.random() * 40
+      }))
+    };
+
+    // Initialize Charts
+    const lineCtx = document.getElementById('lineChart').getContext('2d');
+    const scatterCtx = document.getElementById('scatterPlot').getContext('2d');
+    const timeSeriesCtx = document.getElementById('timeSeriesPlot').getContext('2d');
+
+    let lineChart, scatterPlot, timeSeriesPlot;
+
+    function initCharts() {
+      // Line Chart for Overall Trends
+      lineChart = new Chart(lineCtx, {
+        type: 'line',
+        data: {
+          labels: data.timeSeries.map(d => d.time),
+          datasets: data.parameters.map(param => ({
+            label: param,
+            data: data.timeSeries.map(d => d[param]),
+            borderColor: `rgba(${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, 1)`,
+            fill: false
+          }))
+        },
+        options: {
+          responsive: true,
+          plugins: { title: { display: true, text: 'Parameter Trends Over Time' } }
+        }
+      });
+
+      // Scatter Plot for Correlations
+      scatterPlot = new Chart(scatterCtx, {
+        type: 'scatter',
+        data: {
+          datasets: data.parameters.map(param => ({
+            label: param,
+            data: data.timeSeries.map(d => ({ x: d.time, y: d[param] })),
+            borderColor: `rgba(${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, 1)`
+          }))
+        },
+        options: {
+          responsive: true,
+          plugins: { title: { display: true, text: 'Correlations Between Parameters' } }
+        }
+      });
+
+      // Time Series Plot
+      timeSeriesPlot = new Chart(timeSeriesCtx, {
+        type: 'line',
+        data: {
+          labels: data.timeSeries.map(d => d.time),
+          datasets: data.parameters.map(param => ({
+            label: param,
+            data: data.timeSeries.map(d => d[param]),
+            borderColor: `rgba(${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, 1)`,
+            fill: false
+          }))
+        },
+        options: {
+          responsive: true,
+          plugins: { title: { display: true, text: 'Real-Time Parameter Analysis' } }
+        }
+      });
     }
 
-    // Recording Audio
-    let recorder, audioChunks;
-    async function startRecording() {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      recorder = new MediaRecorder(stream);
-      audioChunks = [];
+    // Update Visualization Based on Filters
+    function updateVisualization() {
+      const parameter = document.getElementById('parameter-filter').value;
+      const timeRange = document.getElementById('time-filter').value;
 
-      recorder.ondataavailable = e => audioChunks.push(e.data);
-      recorder.onstop = () => analyzeAudio(new Blob(audioChunks));
+      // Filter Data
+      const filteredData = data.timeSeries.filter(d => {
+        if (timeRange === 'last5') return d.time >= 95;
+        if (timeRange === 'last1') return d.time >= 99;
+        return true;
+      });
 
-      recorder.start();
-      document.getElementById('record-button').classList.add('hidden');
-      document.getElementById('stop-button').classList.remove('hidden');
-      document.getElementById('record-status').textContent = 'Recording...';
+      // Update Line Chart
+      lineChart.data.datasets = data.parameters
+        .filter(param => parameter === 'all' || param === parameter)
+        .map(param => ({
+          label: param,
+          data: filteredData.map(d => d[param]),
+          borderColor: `rgba(${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, 1)`,
+          fill: false
+        }));
+      lineChart.update();
+
+      // Update Scatter Plot
+      scatterPlot.data.datasets = data.parameters
+        .filter(param => parameter === 'all' || param === parameter)
+        .map(param => ({
+          label: param,
+          data: filteredData.map(d => ({ x: d.time, y: d[param] })),
+          borderColor: `rgba(${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, 1)`
+        }));
+      scatterPlot.update();
+
+      // Update Time Series Plot
+      timeSeriesPlot.data.datasets = data.parameters
+        .filter(param => parameter === 'all' || param === parameter)
+        .map(param => ({
+          label: param,
+          data: filteredData.map(d => d[param]),
+          borderColor: `rgba(${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, 1)`,
+          fill: false
+        }));
+      timeSeriesPlot.update();
     }
 
-    function stopRecording() {
-      recorder.stop();
-      document.getElementById('record-button').classList.remove('hidden');
-      document.getElementById('stop-button').classList.add('hidden');
-      document.getElementById('record-status').textContent = 'Recording stopped.';
-    }
-
-    // Upload Audio File
-    function processFile() {
-      const file = document.getElementById('audio-upload').files[0];
-      if (!file) {
-        alert('Please upload a file first.');
-        return;
-      }
-      analyzeAudio(file);
-    }
-
-    // Analyze Audio
-    function analyzeAudio(audioBlob) {
-      showScreen('results-screen');
-      const resultsDiv = document.getElementById('results');
-      resultsDiv.innerHTML = 'Processing audio...';
-
-      // Simulate analysis (mocked values for simplicity)
-      setTimeout(() => {
-        const metrics = [
-          { type: "Emotional Engagement", grade: 8.25, score: 0.4340, recommendation: "Focus on emotional storytelling." },
-          { type: "Mental Engagement", grade: 5.75, score: 0.5534, recommendation: "Include thought-provoking questions." },
-          { type: "Physical Engagement", grade: 5.78, score: 0.5198, recommendation: "Encourage more movement cues." },
-          { type: "Spiritual Engagement", grade: 5.00, score: 0.3398, recommendation: "Add moments of reflection." }
-        ];
-
-        resultsDiv.innerHTML = metrics.map(metric => `
-          <div class="result-card">
-            <h3>${metric.type}</h3>
-            <p><strong>Average Grade:</strong> ${metric.grade}</p>
-            <p><strong>Total Score:</strong> ${metric.score}</p>
-            <p><strong>Recommendation:</strong> ${metric.recommendation}</p>
-          </div>
-        `).join('');
-      }, 2000);
-    }
-
-    // Export Results
-    function exportResults(format) {
-      const data = [
-        { EngagementType: "Emotional Engagement", AvgGrade: 8.25, TotalScore: 0.4340 },
-        { EngagementType: "Mental Engagement", AvgGrade: 5.75, TotalScore: 0.5534 },
-        { EngagementType: "Physical Engagement", AvgGrade: 5.78, TotalScore: 0.5198 },
-        { EngagementType: "Spiritual Engagement", AvgGrade: 5.00, TotalScore: 0.3398 },
-      ];
-
-      if (format === "csv") {
-        let csvContent = "data:text/csv;charset=utf-8,EngagementType,AvgGrade,TotalScore\n";
-        data.forEach(row => {
-          csvContent += `${row.EngagementType},${row.AvgGrade},${row.TotalScore}\n`;
-        });
-        const link = document.createElement("a");
-        link.setAttribute("href", encodeURI(csvContent));
-        link.setAttribute("download", "results.csv");
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-      } else if (format === "pdf") {
-        alert("PDF export coming soon!"); // Placeholder for integrating PDF libraries
-      } else if (format === "excel") {
-        alert("Excel export coming soon!"); // Placeholder for integrating Excel libraries
-      }
-    }
+    // Initialize on Load
+    window.onload = () => {
+      initCharts();
+    };
   </script>
 </body>
 </html>
