@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>EngageSense: Real-Time Analysis</title>
+  <title>EngageSense: Comprehensive Engagement Metrics</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jspdf"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
@@ -49,93 +49,65 @@
       justify-content: center;
       gap: 20px;
     }
+    .charts-container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
   </style>
 </head>
 <body>
   <div class="container">
-    <h1>EngageSense: Real-Time Analysis</h1>
-    <p>Real-time emotion detection, engagement scoring, and dynamic visualizations.</p>
+    <h1>EngageSense: Comprehensive Engagement Metrics</h1>
+    <p>Real-time tracking of Physical, Spiritual, Mental, and Emotional Engagement.</p>
 
-    <!-- Scorecard -->
-    <div class="scorecard">
-      <h3>Engagement Score</h3>
-      <h2 id="engagement-score">0</h2>
-      <p id="engagement-class">Class: N/A</p>
+    <!-- Engagement Scorecards -->
+    <div class="charts-container">
+      <div class="scorecard">
+        <h3>Physical Engagement</h3>
+        <h2 id="physical-engagement">0</h2>
+      </div>
+      <div class="scorecard">
+        <h3>Spiritual Engagement</h3>
+        <h2 id="spiritual-engagement">0</h2>
+      </div>
+      <div class="scorecard">
+        <h3>Mental Engagement</h3>
+        <h2 id="mental-engagement">0</h2>
+      </div>
+      <div class="scorecard">
+        <h3>Emotional Engagement</h3>
+        <h2 id="emotional-engagement">0</h2>
+      </div>
     </div>
 
-    <!-- Emotion Chart -->
-    <canvas id="emotionChart"></canvas>
-
-    <!-- Engagement Chart -->
-    <canvas id="engagementChart"></canvas>
+    <!-- Engagement Charts -->
+    <canvas id="physicalChart"></canvas>
+    <canvas id="spiritualChart"></canvas>
+    <canvas id="mentalChart"></canvas>
+    <canvas id="emotionalChart"></canvas>
 
     <!-- Buttons -->
     <div class="button-row">
-      <button onclick="startRealTimeProcessing()">Start Real-Time Analysis</button>
-      <button onclick="stopRealTimeProcessing()">Stop Analysis</button>
-      <button onclick="exportToPDF()">Export to PDF</button>
-      <button onclick="exportToCSV()">Export to CSV</button>
+      <button onclick="startEngagementTracking()">Start Tracking</button>
+      <button onclick="stopEngagementTracking()">Stop Tracking</button>
+      <button onclick="exportToPDF()">Export Report to PDF</button>
+      <button onclick="exportToCSV()">Export Data to CSV</button>
     </div>
   </div>
 
   <script>
-    let emotionInterval, engagementInterval;
-    let emotionChart, engagementChart;
-    let emotionData = [];
-    let engagementData = [];
-    let time = 0;
+    let trackingInterval;
+    let physicalChart, spiritualChart, mentalChart, emotionalChart;
 
-    // Initialize Emotion Chart
-    function initEmotionChart() {
-      const ctx = document.getElementById('emotionChart').getContext('2d');
-      emotionChart = new Chart(ctx, {
-        type: 'bar',
-        data: {
-          labels: ['Happy', 'Sad', 'Angry', 'Surprised', 'Fearful', 'Disgusted', 'Neutral'],
-          datasets: [{
-            label: 'Emotion Intensity',
-            data: [0, 0, 0, 0, 0, 0, 0],
-            backgroundColor: [
-              'rgba(75, 192, 192, 0.6)',
-              'rgba(54, 162, 235, 0.6)',
-              'rgba(255, 99, 132, 0.6)',
-              'rgba(255, 206, 86, 0.6)',
-              'rgba(153, 102, 255, 0.6)',
-              'rgba(201, 203, 207, 0.6)',
-              'rgba(255, 159, 64, 0.6)'
-            ]
-          }]
-        },
-        options: {
-          responsive: true,
-          plugins: {
-            title: {
-              display: true,
-              text: 'Emotion Intensity in Real-Time'
-            }
-          },
-          scales: {
-            y: {
-              title: {
-                display: true,
-                text: 'Intensity'
-              },
-              beginAtZero: true
-            }
-          }
-        }
-      });
-    }
-
-    // Initialize Engagement Chart
-    function initEngagementChart() {
-      const ctx = document.getElementById('engagementChart').getContext('2d');
-      engagementChart = new Chart(ctx, {
+    // Initialize Charts
+    function initCharts() {
+      const chartConfig = (label) => ({
         type: 'line',
         data: {
           labels: [],
           datasets: [{
-            label: 'Engagement Score',
+            label: label,
             data: [],
             borderColor: 'rgba(75, 192, 192, 1)',
             fill: false
@@ -146,97 +118,75 @@
           plugins: {
             title: {
               display: true,
-              text: 'Engagement Score Over Time'
+              text: label
             }
           },
           scales: {
-            y: {
-              title: {
-                display: true,
-                text: 'Engagement Score'
-              },
-              beginAtZero: true
-            },
-            x: {
-              title: {
-                display: true,
-                text: 'Time'
-              }
-            }
+            y: { beginAtZero: true },
+            x: { title: { display: true, text: 'Time' } }
           }
         }
       });
+
+      physicalChart = new Chart(document.getElementById('physicalChart').getContext('2d'), chartConfig('Physical Engagement'));
+      spiritualChart = new Chart(document.getElementById('spiritualChart').getContext('2d'), chartConfig('Spiritual Engagement'));
+      mentalChart = new Chart(document.getElementById('mentalChart').getContext('2d'), chartConfig('Mental Engagement'));
+      emotionalChart = new Chart(document.getElementById('emotionalChart').getContext('2d'), chartConfig('Emotional Engagement'));
     }
 
-    // Start Real-Time Processing
-    function startRealTimeProcessing() {
-      // Simulate Emotion Detection
-      emotionInterval = setInterval(() => {
-        const emotions = {
-          Happy: Math.random() * 100,
-          Sad: Math.random() * 50,
-          Angry: Math.random() * 30,
-          Surprised: Math.random() * 80,
-          Fearful: Math.random() * 20,
-          Disgusted: Math.random() * 10,
-          Neutral: Math.random() * 100
-        };
+    // Start Engagement Tracking
+    function startEngagementTracking() {
+      let time = 0;
+      trackingInterval = setInterval(() => {
+        // Simulate data for each engagement type
+        const physical = Math.random() * 100;
+        const spiritual = Math.random() * 100;
+        const mental = Math.random() * 100;
+        const emotional = Math.random() * 100;
 
-        emotionData.push(emotions);
-        emotionChart.data.datasets[0].data = [
-          emotions.Happy,
-          emotions.Sad,
-          emotions.Angry,
-          emotions.Surprised,
-          emotions.Fearful,
-          emotions.Disgusted,
-          emotions.Neutral
-        ];
-        emotionChart.update();
-      }, 2000);
+        // Update Scorecards
+        document.getElementById('physical-engagement').textContent = physical.toFixed(2);
+        document.getElementById('spiritual-engagement').textContent = spiritual.toFixed(2);
+        document.getElementById('mental-engagement').textContent = mental.toFixed(2);
+        document.getElementById('emotional-engagement').textContent = emotional.toFixed(2);
 
-      // Simulate Engagement Scoring
-      engagementInterval = setInterval(() => {
-        const engagementScore = Math.random() * 100;
-        const engagementClass = engagementScore > 75 ? 'High' : engagementScore > 50 ? 'Moderate' : 'Low';
-
-        engagementData.push({ time, engagementScore });
-        document.getElementById('engagement-score').textContent = engagementScore.toFixed(2);
-        document.getElementById('engagement-class').textContent = `Class: ${engagementClass}`;
-
-        engagementChart.data.labels.push(time++);
-        engagementChart.data.datasets[0].data.push(engagementScore);
-
-        if (engagementChart.data.labels.length > 20) {
-          engagementChart.data.labels.shift();
-          engagementChart.data.datasets[0].data.shift();
-        }
-        engagementChart.update();
-      }, 2000);
+        // Update Charts
+        [physicalChart, spiritualChart, mentalChart, emotionalChart].forEach((chart, index) => {
+          const data = [physical, spiritual, mental, emotional][index];
+          chart.data.labels.push(time++);
+          chart.data.datasets[0].data.push(data);
+          if (chart.data.labels.length > 20) {
+            chart.data.labels.shift();
+            chart.data.datasets[0].data.shift();
+          }
+          chart.update();
+        });
+      }, 1000);
     }
 
-    // Stop Real-Time Processing
-    function stopRealTimeProcessing() {
-      clearInterval(emotionInterval);
-      clearInterval(engagementInterval);
-      alert("Real-Time Processing Stopped.");
+    // Stop Engagement Tracking
+    function stopEngagementTracking() {
+      clearInterval(trackingInterval);
+      alert('Engagement tracking stopped.');
     }
 
-    // Export to PDF
+    // Export Report to PDF
     function exportToPDF() {
       const pdf = new jsPDF();
-      pdf.text('EngageSense Report', 10, 10);
+      pdf.text('EngageSense Engagement Report', 10, 10);
       pdf.save('EngageSense_Report.pdf');
     }
 
-    // Export to CSV
+    // Export Data to CSV
     function exportToCSV() {
-      const csvContent = "data:text/csv;charset=utf-8," + 
-        engagementData.map(e => `${e.time},${e.engagementScore}`).join("\n");
+      const csvContent = "data:text/csv;charset=utf-8,Time,Physical,Spiritual,Mental,Emotional\n" +
+        physicalChart.data.labels.map((_, i) => {
+          return `${i},${physicalChart.data.datasets[0].data[i]},${spiritualChart.data.datasets[0].data[i]},${mentalChart.data.datasets[0].data[i]},${emotionalChart.data.datasets[0].data[i]}`;
+        }).join("\n");
       const encodedUri = encodeURI(csvContent);
       const link = document.createElement("a");
       link.setAttribute("href", encodedUri);
-      link.setAttribute("download", "EngageSense_Data.csv");
+      link.setAttribute("download", "EngageSense_Engagement_Data.csv");
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -244,8 +194,7 @@
 
     // Initialize Charts on Load
     window.onload = () => {
-      initEmotionChart();
-      initEngagementChart();
+      initCharts();
     };
   </script>
 </body>
