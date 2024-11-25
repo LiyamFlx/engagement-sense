@@ -15,6 +15,9 @@
     .container {
       padding: 20px;
     }
+    .hidden {
+      display: none;
+    }
     #upload-box, #record-box {
       border: 2px dashed #ccc;
       padding: 20px;
@@ -24,22 +27,27 @@
       background: #fff;
     }
     #results {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 20px;
       margin: 20px auto;
       width: 80%;
-      max-width: 500px;
-      padding: 20px;
+      max-width: 1000px;
+    }
+    .result-card {
       background: #fff;
-      border-radius: 5px;
-      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      width: 200px;
+      text-align: center;
     }
     button {
       margin: 10px;
       padding: 10px 20px;
       font-size: 16px;
       cursor: pointer;
-    }
-    .hidden {
-      display: none;
     }
   </style>
 </head>
@@ -72,7 +80,15 @@
     <!-- Results Screen -->
     <div id="results-screen" class="hidden">
       <h2>Analysis Results</h2>
-      <div id="results"></div>
+      <div id="results">
+        <!-- Dynamically populated KPI cards -->
+      </div>
+      <div style="margin-top: 20px;">
+        <h3>Export Results</h3>
+        <button onclick="exportResults('csv')">Export as CSV</button>
+        <button onclick="exportResults('pdf')">Export as PDF</button>
+        <button onclick="exportResults('excel')">Export as Excel</button>
+      </div>
       <button onclick="showScreen('upload-screen')">Upload/Record Another</button>
     </div>
   </div>
@@ -121,17 +137,53 @@
     function analyzeAudio(audioBlob) {
       showScreen('results-screen');
       const resultsDiv = document.getElementById('results');
-      resultsDiv.textContent = 'Processing audio...';
+      resultsDiv.innerHTML = 'Processing audio...';
 
       // Simulate analysis (mocked values for simplicity)
       setTimeout(() => {
-        const tempo = Math.random() * 100 + 100; // Mock tempo in BPM
-        const rms = Math.random().toFixed(2); // Mock RMS energy
-        resultsDiv.innerHTML = `
-          <p><strong>Tempo:</strong> ${tempo.toFixed(2)} BPM</p>
-          <p><strong>RMS Energy:</strong> ${rms}</p>
-        `;
+        const metrics = [
+          { type: "Emotional Engagement", grade: 8.25, score: 0.4340, recommendation: "Focus on emotional storytelling." },
+          { type: "Mental Engagement", grade: 5.75, score: 0.5534, recommendation: "Include thought-provoking questions." },
+          { type: "Physical Engagement", grade: 5.78, score: 0.5198, recommendation: "Encourage more movement cues." },
+          { type: "Spiritual Engagement", grade: 5.00, score: 0.3398, recommendation: "Add moments of reflection." }
+        ];
+
+        resultsDiv.innerHTML = metrics.map(metric => `
+          <div class="result-card">
+            <h3>${metric.type}</h3>
+            <p><strong>Average Grade:</strong> ${metric.grade}</p>
+            <p><strong>Total Score:</strong> ${metric.score}</p>
+            <p><strong>Recommendation:</strong> ${metric.recommendation}</p>
+          </div>
+        `).join('');
       }, 2000);
+    }
+
+    // Export Results
+    function exportResults(format) {
+      const data = [
+        { EngagementType: "Emotional Engagement", AvgGrade: 8.25, TotalScore: 0.4340 },
+        { EngagementType: "Mental Engagement", AvgGrade: 5.75, TotalScore: 0.5534 },
+        { EngagementType: "Physical Engagement", AvgGrade: 5.78, TotalScore: 0.5198 },
+        { EngagementType: "Spiritual Engagement", AvgGrade: 5.00, TotalScore: 0.3398 },
+      ];
+
+      if (format === "csv") {
+        let csvContent = "data:text/csv;charset=utf-8,EngagementType,AvgGrade,TotalScore\n";
+        data.forEach(row => {
+          csvContent += `${row.EngagementType},${row.AvgGrade},${row.TotalScore}\n`;
+        });
+        const link = document.createElement("a");
+        link.setAttribute("href", encodeURI(csvContent));
+        link.setAttribute("download", "results.csv");
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      } else if (format === "pdf") {
+        alert("PDF export coming soon!"); // Placeholder for integrating PDF libraries
+      } else if (format === "excel") {
+        alert("Excel export coming soon!"); // Placeholder for integrating Excel libraries
+      }
     }
   </script>
 </body>
