@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>EngageSense</title>
+  <title>EngageSense: Advanced Real-Time Analysis</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -14,41 +14,84 @@
     }
     .container {
       padding: 20px;
+      max-width: 1200px;
+      margin: auto;
+    }
+    .filters {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 20px;
+      gap: 20px;
     }
     canvas {
+      width: 100%;
+      max-width: 1000px;
+      height: 400px;
       margin: 20px auto;
-      max-width: 600px;
     }
-    button, select {
-      margin: 10px;
-      padding: 10px 20px;
-      font-size: 16px;
-      cursor: pointer;
+    .table-container {
+      margin: 20px auto;
+      width: 90%;
+      overflow-x: auto;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 20px auto;
+      background: #fff;
+      border: 1px solid #ddd;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+    th, td {
+      padding: 10px;
+      text-align: center;
+      border: 1px solid #ddd;
+    }
+    th {
+      background: #f4f4f9;
+      font-weight: bold;
+    }
+    .result-cards {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 20px;
+    }
+    .result-card {
+      background: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      width: 200px;
+      text-align: center;
     }
   </style>
 </head>
 <body>
   <div class="container">
-    <h1>EngageSense: Advanced Sensor Tracking</h1>
-    <p>Real-time audio and body movement analysis with advanced visualizations.</p>
+    <h1>EngageSense: Real-Time Analysis</h1>
+    <p>Analyze audio and body movement data with real-time metrics.</p>
 
     <!-- Filters -->
-    <div>
-      <label for="parameter-filter">Select Parameter:</label>
-      <select id="parameter-filter" onchange="updateVisualization()">
-        <option value="all">All Parameters</option>
-        <option value="Body Movement">Body Movement</option>
-        <option value="Dance Patterns">Dance Patterns</option>
-        <option value="Hand Movements">Hand Movements</option>
-        <option value="Foot Stomping">Foot Stomping</option>
-      </select>
-
-      <label for="time-filter">Time Range:</label>
-      <select id="time-filter" onchange="updateVisualization()">
-        <option value="full">Full Session</option>
-        <option value="last5">Last 5 Minutes</option>
-        <option value="last1">Last 1 Minute</option>
-      </select>
+    <div class="filters">
+      <div>
+        <label for="parameter-filter">Select Parameter:</label>
+        <select id="parameter-filter" onchange="updateVisualization()">
+          <option value="all">All Parameters</option>
+          <option value="Body Movement">Body Movement</option>
+          <option value="Dance Patterns">Dance Patterns</option>
+          <option value="Hand Movements">Hand Movements</option>
+          <option value="Foot Stomping">Foot Stomping</option>
+        </select>
+      </div>
+      <div>
+        <label for="time-filter">Time Range:</label>
+        <select id="time-filter" onchange="updateVisualization()">
+          <option value="full">Full Session</option>
+          <option value="last5">Last 5 Seconds</option>
+          <option value="last1">Last 1 Second</option>
+        </select>
+      </div>
     </div>
 
     <!-- Visualization Section -->
@@ -56,7 +99,30 @@
       <h3>Engagement Metrics Visualization</h3>
       <canvas id="lineChart"></canvas>
       <canvas id="scatterPlot"></canvas>
-      <canvas id="timeSeriesPlot"></canvas>
+    </div>
+
+    <!-- Result Cards -->
+    <div class="result-cards">
+      <!-- Cards dynamically generated -->
+    </div>
+
+    <!-- Detailed Table -->
+    <div class="table-container">
+      <h3>Engagement Metrics Data</h3>
+      <table id="data-table">
+        <thead>
+          <tr>
+            <th>Time</th>
+            <th>Body Movement</th>
+            <th>Dance Patterns</th>
+            <th>Hand Movements</th>
+            <th>Foot Stomping</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Data dynamically generated -->
+        </tbody>
+      </table>
     </div>
   </div>
 
@@ -64,127 +130,123 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
   <script>
-    // Mock Data for Real-Time Analysis
-    const data = {
-      parameters: ["Body Movement", "Dance Patterns", "Hand Movements", "Foot Stomping"],
-      timeSeries: Array.from({ length: 100 }, (_, i) => ({
-        time: i,
-        "Body Movement": Math.random() * 100,
-        "Dance Patterns": Math.random() * 80,
-        "Hand Movements": Math.random() * 60,
-        "Foot Stomping": Math.random() * 40
-      }))
-    };
+    // Real-time data arrays
+    const parameters = ["Body Movement", "Dance Patterns", "Hand Movements", "Foot Stomping"];
+    let timeSeries = []; // Holds real-time data
 
     // Initialize Charts
+    let lineChart, scatterPlot;
     const lineCtx = document.getElementById('lineChart').getContext('2d');
     const scatterCtx = document.getElementById('scatterPlot').getContext('2d');
-    const timeSeriesCtx = document.getElementById('timeSeriesPlot').getContext('2d');
-
-    let lineChart, scatterPlot, timeSeriesPlot;
 
     function initCharts() {
-      // Line Chart for Overall Trends
+      // Line Chart for Real-Time Data
       lineChart = new Chart(lineCtx, {
         type: 'line',
         data: {
-          labels: data.timeSeries.map(d => d.time),
-          datasets: data.parameters.map(param => ({
+          labels: [], // Time points
+          datasets: parameters.map(param => ({
             label: param,
-            data: data.timeSeries.map(d => d[param]),
-            borderColor: `rgba(${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, 1)`,
+            data: [],
+            borderColor: `rgba(${Math.random() * 255}, ${Math.random() * 255}, ${Math.random() * 255}, 1)`,
             fill: false
           }))
         },
         options: {
           responsive: true,
-          plugins: { title: { display: true, text: 'Parameter Trends Over Time' } }
+          plugins: {
+            title: { display: true, text: 'Real-Time Parameter Trends' }
+          }
         }
       });
 
-      // Scatter Plot for Correlations
+      // Scatter Plot for Parameter Correlations
       scatterPlot = new Chart(scatterCtx, {
         type: 'scatter',
         data: {
-          datasets: data.parameters.map(param => ({
+          datasets: parameters.map(param => ({
             label: param,
-            data: data.timeSeries.map(d => ({ x: d.time, y: d[param] })),
-            borderColor: `rgba(${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, 1)`
+            data: [],
+            borderColor: `rgba(${Math.random() * 255}, ${Math.random() * 255}, ${Math.random() * 255}, 1)`
           }))
         },
         options: {
           responsive: true,
-          plugins: { title: { display: true, text: 'Correlations Between Parameters' } }
-        }
-      });
-
-      // Time Series Plot
-      timeSeriesPlot = new Chart(timeSeriesCtx, {
-        type: 'line',
-        data: {
-          labels: data.timeSeries.map(d => d.time),
-          datasets: data.parameters.map(param => ({
-            label: param,
-            data: data.timeSeries.map(d => d[param]),
-            borderColor: `rgba(${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, 1)`,
-            fill: false
-          }))
-        },
-        options: {
-          responsive: true,
-          plugins: { title: { display: true, text: 'Real-Time Parameter Analysis' } }
+          plugins: {
+            title: { display: true, text: 'Parameter Correlations' }
+          }
         }
       });
     }
 
-    // Update Visualization Based on Filters
-    function updateVisualization() {
-      const parameter = document.getElementById('parameter-filter').value;
-      const timeRange = document.getElementById('time-filter').value;
+    // Fetch real-time data
+    async function fetchData() {
+      setInterval(() => {
+        const currentTime = timeSeries.length;
+        const newData = {
+          time: currentTime,
+          "Body Movement": Math.random() * 100,
+          "Dance Patterns": Math.random() * 80,
+          "Hand Movements": Math.random() * 60,
+          "Foot Stomping": Math.random() * 40
+        };
+        timeSeries.push(newData);
+        updateCharts();
+        updateTable();
+        updateCards();
+      }, 1000); // Update every second
+    }
 
-      // Filter Data
-      const filteredData = data.timeSeries.filter(d => {
-        if (timeRange === 'last5') return d.time >= 95;
-        if (timeRange === 'last1') return d.time >= 99;
-        return true;
+    // Update Charts
+    function updateCharts() {
+      lineChart.data.labels = timeSeries.map(d => d.time);
+      lineChart.data.datasets.forEach(dataset => {
+        dataset.data = timeSeries.map(d => d[dataset.label]);
       });
-
-      // Update Line Chart
-      lineChart.data.datasets = data.parameters
-        .filter(param => parameter === 'all' || param === parameter)
-        .map(param => ({
-          label: param,
-          data: filteredData.map(d => d[param]),
-          borderColor: `rgba(${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, 1)`,
-          fill: false
-        }));
       lineChart.update();
 
-      // Update Scatter Plot
-      scatterPlot.data.datasets = data.parameters
-        .filter(param => parameter === 'all' || param === parameter)
-        .map(param => ({
-          label: param,
-          data: filteredData.map(d => ({ x: d.time, y: d[param] })),
-          borderColor: `rgba(${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, 1)`
-        }));
+      scatterPlot.data.datasets.forEach(dataset => {
+        dataset.data = timeSeries.map(d => ({ x: d.time, y: d[dataset.label] }));
+      });
       scatterPlot.update();
-
-      // Update Time Series Plot
-      timeSeriesPlot.data.datasets = data.parameters
-        .filter(param => parameter === 'all' || param === parameter)
-        .map(param => ({
-          label: param,
-          data: filteredData.map(d => d[param]),
-          borderColor: `rgba(${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, 1)`,
-          fill: false
-        }));
-      timeSeriesPlot.update();
     }
 
-    // Initialize on Load
+    // Update Table
+    function updateTable() {
+      const tbody = document.getElementById('data-table').querySelector('tbody');
+      tbody.innerHTML = '';
+      timeSeries.forEach(row => {
+        tbody.innerHTML += `
+          <tr>
+            <td>${row.time}</td>
+            <td>${row["Body Movement"].toFixed(2)}</td>
+            <td>${row["Dance Patterns"].toFixed(2)}</td>
+            <td>${row["Hand Movements"].toFixed(2)}</td>
+            <td>${row["Foot Stomping"].toFixed(2)}</td>
+          </tr>
+        `;
+      });
+    }
+
+    // Update Cards
+    function updateCards() {
+      const cardContainer = document.querySelector('.result-cards');
+      cardContainer.innerHTML = '';
+      parameters.forEach(param => {
+        const avg = timeSeries.reduce((sum, row) => sum + row[param], 0) / timeSeries.length;
+        cardContainer.innerHTML += `
+          <div class="result-card">
+            <h3>${param}</h3>
+            <p>Average: ${avg.toFixed(2)}</p>
+          </div>
+        `;
+      });
+    }
+
+    // Initialize everything
     window.onload = () => {
       initCharts();
+      fetchData();
     };
   </script>
 </body>
